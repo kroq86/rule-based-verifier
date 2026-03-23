@@ -1,0 +1,28 @@
+---
+description: Seven-point explanations and mandatory pre-code template for nontrivial work
+alwaysApply: true
+---
+
+# Explanation format
+
+## Any technical topic (use this order)
+
+1. Idea  
+2. Language/API  
+3. Planner/runtime  
+4. Storage/data-structure  
+5. OS/hardware (when relevant)  
+6. Complexity/perf  
+7. One-liner summary  
+
+## Before nontrivial code (mandatory)
+
+Output **before** the diff:
+
+- **Plan** — steps and intent  
+- **Touched files** — paths to add or change  
+- **Assumptions** — about code, env, or behavior  
+- **Risks** — what could break  
+- **Rollback** — how to undo  
+
+The human reviews this **before** treating the diff as authoritative. Details: `AGENTS.md`.

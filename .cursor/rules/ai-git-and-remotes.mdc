@@ -1,0 +1,12 @@
+---
+description: No git commit/push/force-push without explicit user permission
+alwaysApply: true
+---
+
+# Git, commits, and remotes
+
+- **Never** run `git commit`, `git push`, `git push --force`, `git tag`, or alter remotes / protected branches unless the user **explicitly** requested that in the current conversation.
+- Prefer: show the diff, propose a commit message, and give the exact commands for the user to run.
+- If the user says e.g. “commit and push” or “you can push,” that counts as explicit permission for **that** action only.
+
+Full policy: `AGENTS.md` (section “Git, commits, and remotes”).

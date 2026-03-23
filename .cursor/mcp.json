@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rule-based-verifier": {
+      "command": "bash",
+      "args": ["mcp/scripts/run-docker-mcp.sh"]
+    }
+  }
+}

@@ -1,0 +1,29 @@
+---
+description: Human-owned decisions, approved AI usage, change trail, rules vs tools, common traps
+alwaysApply: true
+---
+
+# Ownership and governance
+
+## Human-owned (do not decide alone)
+
+Unless the human **explicitly approves** a chosen path: module boundaries, data flow, state model, API contracts, error strategy, auth, concurrency, caching, data model design, scaling. You may list options and tradeoffs; **do not silently pick**.
+
+## Where AI helps vs does not
+
+- **Good:** boilerplate, tests, repetitive refactors, local transforms, summarizing unfamiliar code.  
+- **Not default driver:** architecture, auth, concurrency, caching, data model, scaling.
+
+## Nontrivial changes — leave a trail
+
+Remind or supply in PR/commit context: **why**; **alternatives rejected**; **invariants**; **what test proves it**.
+
+## Rules vs MCP/tools
+
+**Rules** = behavior, authority, stop conditions. **Tools** = verification and observability. Tools never replace workflow discipline.
+
+## Name these traps when relevant
+
+Confident wrongness; lost codebase understanding; short-horizon success; unknown debt; fix-it loop; fluency bias; completion bias; local success bias; tool bias; prompt bias.
+
+See `AGENTS.md` for the full document.

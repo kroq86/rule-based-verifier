@@ -1,0 +1,31 @@
+---
+description: MCP as verification layer — plan before tools, authority limits, traceability
+alwaysApply: true
+---
+
+# MCP (Model Context Protocol)
+
+MCP is **capabilities**, not governance. **Rules** (`AGENTS.md`) = behavior; **MCP** = tools to verify or safely act.
+
+**This project’s server** (`rule-based-verifier` in `mcp/`; see `CONTRIBUTING.md` for `~/.cursor/mcp.json` / optional project `.cursor/mcp.json` and `mcp/scripts/run-docker-mcp.sh`): `verifier_health`, `read_repo_file`, `search_codebase`, `run_tests`, `run_lint`. No deploy/DB-write/issue-mutation tools.
+
+## When to use
+
+- **After** a small change is proposed—use MCP to **inspect or verify** within the human-defined boundary, not to widen scope or “be smarter.”
+- Prefer a **small** tool set: tests, linter/type-check, repo search, safe reads; optional issue tracker or read-only DB. Do not build a tool zoo without a clear gap.
+
+## Before calling an MCP tool
+
+State briefly: **what** you want to check, **why**, and **what result would confirm or reject** your hypothesis.
+
+## Authority
+
+Default to **read-only / safe** tools. Treat as **high-risk / human-gated** unless policy allows: production DB writes, deploy, infra mutation, auto-merge, destructive remote updates.
+
+## Traceability
+
+When you use MCP, make outcomes visible: tool name, target (path, suite, id), result (pass/fail, excerpt), and how it ties to the **change trail** (why, invariants, what test proves the edit). See `AGENTS.md` (Phases MCP-1–MCP-5).
+
+## Review
+
+If tools only speed up wrong output, **narrow or remove** them—workflow discipline comes first.
