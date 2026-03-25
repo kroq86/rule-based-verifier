@@ -4,3 +4,9 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 emacs/*.elc
+
+# Generated trace outputs (regenerate via MCP tools)
+solution_semantic_trace.html
+solution_semantic_trace.svg
+solution_trace.svg
+verification_trace.svg

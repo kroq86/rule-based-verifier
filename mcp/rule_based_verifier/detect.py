@@ -36,6 +36,24 @@ def test_command(root: Path) -> tuple[list[str] | None, str]:
     return None, "no test command detected"
 
 
+def get_test_command_with_cwd(root: Path) -> tuple[list[str] | None, str, Path]:
+    """
+    Resolved test command and **working directory** for subprocess runs.
+
+    When the workspace root has no ``pyproject.toml`` but ``mcp/pyproject.toml`` exists (this
+    repository's layout), use ``mcp/`` as cwd so pytest resolves package imports correctly.
+    """
+    mcp_dir = root / "mcp"
+    if (root / "pyproject.toml").exists():
+        cmd, src = test_command(root)
+        return cmd, src, root
+    if (mcp_dir / "pyproject.toml").exists():
+        cmd, src = test_command(mcp_dir)
+        return cmd, src, mcp_dir
+    cmd, src = test_command(root)
+    return cmd, src, root
+
+
 def lint_command(root: Path) -> tuple[list[str] | None, str]:
     override = _cmd_from_env("RULE_BASED_LINT_CMD")
     if override:

@@ -102,3 +102,25 @@ def trace_payload(
 
 def format_trace_json(payload: dict) -> str:
     return json.dumps(payload, indent=2)
+
+
+def format_trace_tool_result(payload: dict) -> str:
+    """Markdown summary (when present) plus full JSON for MCP tool responses."""
+    tool = payload.get("tool", "trace")
+    parts: list[str] = [f"## {tool}"]
+    for line in payload.get("summary_lines") or []:
+        parts.append(str(line))
+    if payload.get("preview_url"):
+        parts.append(f"**Preview:** {payload['preview_url']}")
+    if payload.get("preview_error"):
+        parts.append(f"**Preview error:** {payload['preview_error']}")
+    if payload.get("svg_path"):
+        parts.append(f"**SVG:** `{payload['svg_path']}`")
+    if payload.get("html_path"):
+        parts.append(f"**HTML:** `{payload['html_path']}`")
+    if payload.get("html_uri"):
+        parts.append(f"**HTML URI:** {payload['html_uri']}")
+    if payload.get("error"):
+        parts.append(f"**Error:** {payload['error']}")
+    parts.extend(["", "```json", json.dumps(payload, indent=2), "```"])
+    return "\n".join(parts)

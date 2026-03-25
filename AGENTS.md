@@ -162,7 +162,7 @@ Avoid a large tool zoo. Start with tools that **reduce blind guessing**:
 
 Add more only when a clear verification gap appears.
 
-**This repository:** a stdio MCP server lives in `mcp/` (`rule-based-verifier`). It exposes `verifier_health`, `read_repo_file`, `search_codebase`, `run_tests`, and `run_lint`. Cursor wiring: **`~/.cursor/mcp.json`** (global) and/or optional **`.cursor/mcp.json`** calling **`mcp/scripts/run-docker-mcp.sh`** (see `CONTRIBUTING.md`); local dev can still use `uv run` from `mcp/` without Docker. The same server is also published as a **Docker image** to GHCR (see `Dockerfile` and `CONTRIBUTING.md`) for reuse in other repos without a local Python toolchain. No issue-tracker or DB tools are bundled here by design (high-risk surfaces stay human-gated).
+**This repository:** a stdio MCP server lives in `mcp/` (`rule-based-verifier`). It exposes `verifier_health`, `read_repo_file`, `search_codebase`, `run_tests`, `run_lint`, and `solution_trace` (with `mode` for git / JSON payload / semantic AST trace). Cursor wiring: **`~/.cursor/mcp.json`** (global) and/or optional **`.cursor/mcp.json`** calling **`mcp/scripts/run-docker-mcp.sh`** (see `CONTRIBUTING.md`). For local stdio dev, prefer **`.venv/bin/python -u run_server.py`** from `mcp/` (avoid `uv run` for stdio MCP transport). `run_lint` resolves commands from `RULE_BASED_LINT_CMD`, then `ruff`, then `npm run lint`; if none are available it returns a configuration hint. The same server is also published as a **Docker image** to GHCR (see `Dockerfile` and `CONTRIBUTING.md`) for reuse in other repos without a local Python toolchain. No issue-tracker or DB tools are bundled here by design (high-risk surfaces stay human-gated).
 
 ---
 

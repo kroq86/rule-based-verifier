@@ -7,7 +7,7 @@ alwaysApply: true
 
 MCP is **capabilities**, not governance. **Rules** (`AGENTS.md`) = behavior; **MCP** = tools to verify or safely act.
 
-**This project’s server** (`rule-based-verifier` in `mcp/`; see `CONTRIBUTING.md` for `~/.cursor/mcp.json` / optional project `.cursor/mcp.json` and `mcp/scripts/run-docker-mcp.sh`): `verifier_health`, `read_repo_file`, `search_codebase`, `run_tests`, `run_lint`. No deploy/DB-write/issue-mutation tools.
+**This project’s server** (`rule-based-verifier` in `mcp/`; see `CONTRIBUTING.md` for `~/.cursor/mcp.json` / optional project `.cursor/mcp.json` and `mcp/scripts/run-docker-mcp.sh`): `verifier_health`, `read_repo_file`, `search_codebase`, `run_tests`, `run_lint`, `solution_trace` (``mode=git|payload|semantic``). No deploy/DB-write/issue-mutation tools.
 
 ## When to use
 
