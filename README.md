@@ -19,7 +19,7 @@ Human-led workflow for AI-assisted coding: **policy first**, **small steps**, **
 
 Open in browser: `solution_semantic_trace.html` (or use a local `file://` URL for your own clone path).
 
-![Solution semantic trace preview](Screenshot_2026-03-25_at_5.59.59_PM-c557dab2-7f8c-48b7-8788-c70519e58b50.png)
+<img width="1512" height="795" alt="Screenshot 2026-03-25 at 6 07 04 PM" src="https://github.com/user-attachments/assets/25ac7177-2f76-4e88-9369-0574e3f4c4a0" />
 
 ## Run the MCP server (Docker)
 
