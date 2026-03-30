@@ -1,5 +1,5 @@
 ---
-description: Graph-shaped core via embedded DSL — types + ops build IR by construction (see cross-layer mapping)
+description: Graph-shaped core via embedded DSL — small typed vocabulary; forward pass builds IR by construction.
 alwaysApply: true
 ---
 
@@ -7,65 +7,53 @@ alwaysApply: true
 
 ## Scope
 
-Applies when the **main artifact is the structure of computation**, not only a final number: autodiff, explicit graphs, pipelines where **dependencies and ops must stay visible**. Does **not** apply to glue, I/O, config, CLI, or generic business logic with no graph semantics. If the task is not graph-shaped, use normal Python.
+Use this when the **main artifact is the structure of computation** (autodiff, explicit graphs, pipelines where dependencies and ops must stay visible), not only a scalar result.
 
-**One-line idea:** if the core is graph-shaped, the **language of that core** should be graph-shaped too—not arbitrary Python that hides intent in variables, loops, and `dict` soup.
+**Does not apply to:** glue, I/O, config, CLI, or business logic with no graph semantics — use ordinary Python there.
+
+**Core idea:** if the problem is graph-shaped, the **language of the core** should be graph-shaped too: not loose variables, loops, and ad hoc `dict`/`list` as the carrier of meaning.
 
 ---
 
-## Cross-layer mapping (what this pattern is for)
+## Pattern (layer by layer)
 
 ### 1. Idea
 
-- Plain Python **computes** well but **does not keep** “what was intended” as an explicit graph; dependencies scatter across variables and control flow.
-- Embedded DSL: **small vocabulary of types + ops**; each op **builds a node** (parents, op kind, backward hook). The graph exists **by construction**, not by later analysis of arbitrary code.
+Plain Python **evaluates** but often **does not retain** an explicit graph; dependencies hide in control flow. An embedded DSL uses a **small set of types and ops**; each op **allocates a node** (parents, op kind, backward hook). The graph exists **by construction**, not by reverse-engineering arbitrary code.
 
 ### 2. Language / API
 
-- Engineers use **restricted vocabulary**: types like `Value` / `Tensor` / `Node`, ops like `+`, `*`, `tanh`, `matmul`. Ops return **typed nodes**, not anonymous floats for the core.
-- **Embedded** = same host syntax (e.g. Python), **different semantics** for those types (overloaded operators record structure).
-- Extend by **composition** of primitives; keep the primitive set **small**. Prefer invalid combinations to be **hard to express** or catch by types.
+Restricted vocabulary: types such as `Value` / `Tensor` / `Node`, ops such as `+`, `*`, `tanh`, `matmul`. Ops return **typed nodes**, not anonymous floats, for the structured core. **Embedded** means the host syntax stays the same (e.g. Python) but **semantics** differ (operators record structure). Extend by **composition**; keep primitives **small** and invalid combinations **hard to express** or catch with types.
 
 ### 3. Planner / runtime
 
-- Nothing “reconstructs” IR from text after the fact: the **forward pass builds** the graph as objects run.
-- Typical flow: create leaves → each op allocates a node, wires parents, stores `op` / `_backward` / etc. → DAG. On top: forward eval, backward, topo order, checks, export/trace.
-- IR may live as **object graph + callbacks**, not necessarily a separate JSON file—still structured.
-- DSL **reduces** the error space; it does **not** replace tests, specs, or external verifiers.
+Nothing rebuilds IR from prose after the fact: the **forward pass** builds the graph as code runs. Typical flow: leaves → each op creates a node, wires parents, stores `op` / `_backward` / … → DAG. Then: forward eval, backward, topo order, checks, export/trace. IR can be **objects + callbacks**; it need not be a separate file format. The DSL **narrows** mistakes; it **does not** replace tests, specs, or external verifiers.
 
 ### 4. Storage / data structures
 
-- Node: `data`, optional `grad`, parents (`_prev` / inputs), `op`, `_backward`, optional shape/dtype/metadata.
-- Graph: implicit DAG via pointers, or explicit node list / topo order.
-- **Avoid** raw nested dict/list as the **core** representation of semantics—they lack invariants and typed structure.
+Node: payload (`data`), optional `grad`, parents (`_prev` / inputs), `op`, `_backward`, optional metadata (shape, dtype, …). Graph: implicit DAG via pointers, or an explicit node list / topo order. **Do not** use raw nested `dict`/`list` as the **semantic core** when the real model is a graph—they lack clear invariants.
 
-### 5. OS / hardware
+### 5. Environment and cost
 
-- CPU still runs normal instructions; cost is **object allocation**, pointer chasing, interpreter overhead—not “magic.” I/O and config stay at **edges**; DSL targets the **structured core**. Trade-off: more metadata, more control; naive Python-object graphs are rarely peak FLOPs.
+Execution is still normal CPU instructions; the price is **allocation**, pointer chasing, and interpreter overhead. I/O and config live at **edges**; the DSL targets the **core**. Naive object graphs are rarely peak FLOPs. Building is often **O(N)** in ops; forward/backward often **O(V+E)** on the DAG. Bottlenecks: object overhead, metadata memory, locality vs dense arrays, graph blow-up if primitives are too fine. The win is **observability and structural clarity**, not automatic peak speed; fast paths are a separate concern (lowering, fusion, other backends).
 
-### 6. Complexity / performance
+### 6. Summary sentence
 
-- Build often **O(N)** in number of ops; forward/backward **O(V+E)** on the DAG. Real bottlenecks: Python object overhead, memory for graph metadata, cache locality vs dense arrays, graph size explosion if primitives are too fine.
-- DSL wins on **observability and structural correctness**, not automatically on raw speed; lowering/fusion backends are a separate step.
-
-### 7. One-liner
-
-**Express graph-shaped core logic through a small set of meaningful types and operations so the computation graph is built automatically, stays inspectable for runtime/autodiff/verification, and does not dissolve into unstructured Python.**
+**Prefer a small set of meaningful types and operations so the computation graph is built automatically, stays inspectable (autodiff, tracing, verification), and does not collapse into unstructured Python.**
 
 ---
 
 ## What to do
 
-- Implement new graph-shaped logic **through** the DSL layer first; plain Python only at boundaries (load data, print, files).
-- Keep primitives **few**; grow behavior by **composition**.
-- Reference in this repo: `examples/micrograd_value.py`.
+- Implement graph-shaped logic **through** the DSL first; plain Python only at boundaries (load data, print, files).
+- Keep primitives **few**; add behavior by **composition**.
 
 ## What not to do
 
-- Core semantics as untyped `dict`/`list` soup when the real model is a graph.
-- Claim that “any Python” is already an IR.
-- Treat DSL as a substitute for **executable** specs/tests—only as a **narrower** implementation space.
+- Encode core semantics as untyped `dict`/`list` soup when the real model is a graph.
+- Pretend “any Python” is already a stable IR.
+- Use the DSL instead of **executable** tests/specs—it is a **narrower** implementation space, not a replacement.
 
-## Relation to other rules
+## Other guidance
 
-`ai-capability-honesty.mdc` — say what the DSL cannot guarantee. Workflow: `AGENTS.md`.
+State clearly what the DSL **does not** guarantee (e.g. end-to-end correctness, performance of the whole system). Follow the project’s own workflow and honesty-about-capabilities conventions when present.
