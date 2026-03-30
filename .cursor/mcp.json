@@ -1,16 +1,10 @@
 {
   "mcpServers": {
     "rule-based-verifier": {
-      "type": "stdio",
       "command": "bash",
-      "args": [
-        "-c",
-        "exec bash \"$CURSOR_WORKSPACE_FOLDER/mcp/scripts/run-docker-mcp.sh\""
-      ],
+      "args": ["mcp/scripts/run-docker-mcp.sh"],
       "env": {
-        "RULE_BASED_DOCKER_IMAGE": "rule-based-verifier:local",
-        "CURSOR_WORKSPACE_FOLDER": "${workspaceFolder}",
-        "VSCODE_WORKSPACE_FOLDER": "${workspaceFolder}"
+        "RULE_BASED_DOCKER_IMAGE": "ghcr.io/kroq86/rule-based-verifier:latest"
       }
     }
   }
