@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Solution Semantic Trace</title>
+  <script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+  <style>
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    #top { padding: 10px 12px; border-bottom: 1px solid #ddd; display: flex; gap: 8px; align-items: center; }
+    #layout { display: flex; flex-direction: row; align-items: stretch; height: calc(100vh - 52px); }
+    #cy-panel { flex: 0 0 45%; min-width: 180px; max-width: 85%; display: flex; flex-direction: column; min-height: 0; }
+    #cy { flex: 1; width: 100%; min-height: 0; }
+    #splitter { flex: 0 0 6px; width: 6px; cursor: col-resize; background: #e0e0e0; border-left: 1px solid #ccc; border-right: 1px solid #ccc; }
+    #splitter:hover { background: #c8c8c8; }
+    #right { flex: 1 1 auto; min-width: 200px; overflow: auto; padding: 10px; background: #fafafa; }
+    #details { margin-bottom: 10px; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 8px; font-size: 12px; }
+    .pill { padding: 4px 8px; border-radius: 999px; border: 1px solid #ccc; cursor: pointer; background:#fff; }
+    .symbol { background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px; margin-bottom:8px; }
+    .hdr { font-weight:600; margin-bottom:6px; }
+    .meta { color:#555; font-size:12px; margin-bottom:6px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    pre { margin:0; white-space:pre-wrap; word-break:break-word; background:#f5f5f5; border:1px solid #e5e5e5; border-radius:6px; padding:8px; max-height:220px; overflow:auto; font-size:12px; }
+    .chg { background: #fff3cd; display:block; border-radius:3px; }
+    .tag { display:inline-block; padding:2px 6px; border-radius:999px; font-size:11px; margin-right:6px; border:1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <div id="top">
+    <strong>Solution Semantic Trace</strong>
+    <input id="search" placeholder="Search symbol or file..." style="flex:1; padding:6px 8px;" />
+    <button class="pill" data-filter="all">all</button>
+    <button class="pill" data-filter="added">added</button>
+    <button class="pill" data-filter="modified">modified</button>
+    <button class="pill" data-filter="removed">removed</button>
+  </div>
+  <div id="layout">
+    <div id="cy-panel">
+      <div id="cy"></div>
+    </div>
+    <div id="splitter" role="separator" aria-orientation="vertical" title="Drag to resize panes"></div>
+    <div id="right">
+      <pre id="details">Click a node to focus graph. All changed code snippets are listed below.</pre>
+      <div id="symbols"></div>
+    </div>
+  </div>
+  <script>
+    const data = {"nodes": [{"data": {"id": "sym:examples/micrograd_value.py:Value", "label": "Value", "path": "examples/micrograd_value.py", "status": "added", "kind": "class", "calls": "", "old_code": "", "new_code": "class Value:\n    \"\"\"Scalar value with automatic differentiation.\"\"\"\n\n    __slots__ = (\"data\", \"grad\", \"_backward\", \"_prev\", \"_op\")\n\n    def __init__(self, data: float, _children: Tuple[\"Value\", ...] = (), _op: str = \"\") -> None:\n        self.data = float(data)\n        self.grad = 0.0\n        self._backward: Callable[[], None] = lambda: None\n        self._prev: Set[Value] = set(_children)\n        self._op = _op\n\n    def __repr__(self) -> str:\n        return f\"Value(data={self.data})\"\n\n    def backward(self) -> None:\n        \"\"\"Backpropagate from this scalar. Accumulates ``grad``; call :func:`zero_grad` before a new step.\"\"\"\n        topo: list[Value] = []\n        visited: Set[Value] = set()\n\n        def build_topo(v: Value) -> None:\n            if v not in visited:\n                visited.add(v)\n                for ch in v._prev:\n                    build_topo(ch)\n                topo.append(v)\n\n        build_topo(self)\n        self.grad = 1.0\n        for v in reversed(topo):\n            v._backward()\n\n    # --- ops ---\n\n    def __add__(self, other: Any) -> \"Value\":\n        other = _as_value(other)\n        out = Value(self.data + other.data, (self, other), \"+\")\n\n        def _backward"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__add__", "label": "Value.__add__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "Value, _as_value", "old_code": "", "new_code": "def __add__(self, other: Any) -> \"Value\":\n        other = _as_value(other)\n        out = Value(self.data + other.data, (self, other), \"+\")\n\n        def _backward() -> None:\n            self.grad += out.grad\n            other.grad += out.grad\n\n        out._backward = _backward\n        return out"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__init__", "label": "Value.__init__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "float, set", "old_code": "", "new_code": "def __init__(self, data: float, _children: Tuple[\"Value\", ...] = (), _op: str = \"\") -> None:\n        self.data = float(data)\n        self.grad = 0.0\n        self._backward: Callable[[], None] = lambda: None\n        self._prev: Set[Value] = set(_children)\n        self._op = _op"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__mul__", "label": "Value.__mul__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "Value, _as_value", "old_code": "", "new_code": "def __mul__(self, other: Any) -> \"Value\":\n        other = _as_value(other)\n        out = Value(self.data * other.data, (self, other), \"*\")\n\n        def _backward() -> None:\n            self.grad += other.data * out.grad\n            other.grad += self.data * out.grad\n\n        out._backward = _backward\n        return out"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__neg__", "label": "Value.__neg__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "", "old_code": "", "new_code": "def __neg__(self) -> \"Value\":\n        return self * -1"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__pow__", "label": "Value.__pow__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "Value, float, isinstance", "old_code": "", "new_code": "def __pow__(self, other: Any) -> \"Value\":\n        if not isinstance(other, (int, float)):\n            return NotImplemented\n        out = Value(self.data ** float(other), (self,), f\"**{other}\")\n\n        def _backward() -> None:\n            self.grad += float(other) * (self.data ** (float(other) - 1.0)) * out.grad\n\n        out._backward = _backward\n        return out"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__radd__", "label": "Value.__radd__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "_as_value", "old_code": "", "new_code": "def __radd__(self, other: Any) -> \"Value\":\n        return _as_value(other) + self"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__repr__", "label": "Value.__repr__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "", "old_code": "", "new_code": "def __repr__(self) -> str:\n        return f\"Value(data={self.data})\""}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__rmul__", "label": "Value.__rmul__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "_as_value", "old_code": "", "new_code": "def __rmul__(self, other: Any) -> \"Value\":\n        return _as_value(other) * self"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__rsub__", "label": "Value.__rsub__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "_as_value", "old_code": "", "new_code": "def __rsub__(self, other: Any) -> \"Value\":\n        return _as_value(other) - self"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__rtruediv__", "label": "Value.__rtruediv__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "_as_value", "old_code": "", "new_code": "def __rtruediv__(self, other: Any) -> \"Value\":\n        return _as_value(other) / self"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__sub__", "label": "Value.__sub__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "_as_value", "old_code": "", "new_code": "def __sub__(self, other: Any) -> \"Value\":\n        return self + (-_as_value(other))"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.__truediv__", "label": "Value.__truediv__", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "_as_value", "old_code": "", "new_code": "def __truediv__(self, other: Any) -> \"Value\":\n        return self * _as_value(other) ** -1"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.backward", "label": "Value.backward", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "_backward, add, append, build_topo, reversed, set", "old_code": "", "new_code": "def backward(self) -> None:\n        \"\"\"Backpropagate from this scalar. Accumulates ``grad``; call :func:`zero_grad` before a new step.\"\"\"\n        topo: list[Value] = []\n        visited: Set[Value] = set()\n\n        def build_topo(v: Value) -> None:\n            if v not in visited:\n                visited.add(v)\n                for ch in v._prev:\n                    build_topo(ch)\n                topo.append(v)\n\n        build_topo(self)\n        self.grad = 1.0\n        for v in reversed(topo):\n            v._backward()"}}, {"data": {"id": "sym:examples/micrograd_value.py:Value.tanh", "label": "Value.tanh", "path": "examples/micrograd_value.py", "status": "added", "kind": "method", "calls": "Value, tanh", "old_code": "", "new_code": "def tanh(self) -> \"Value\":\n        t = math.tanh(self.data)\n        out = Value(t, (self,), \"tanh\")\n\n        def _backward() -> None:\n            self.grad += (1.0 - t * t) * out.grad\n\n        out._backward = _backward\n        return out"}}, {"data": {"id": "sym:examples/micrograd_value.py:_as_value", "label": "_as_value", "path": "examples/micrograd_value.py", "status": "added", "kind": "function", "calls": "Value, isinstance", "old_code": "", "new_code": "def _as_value(x: Any) -> \"Value\":\n    return x if isinstance(x, Value) else Value(x)"}}, {"data": {"id": "sym:examples/micrograd_value.py:_demo", "label": "_demo", "path": "examples/micrograd_value.py", "status": "added", "kind": "function", "calls": "Path, Value, backward, print, render_svg, resolve, tanh", "old_code": "", "new_code": "def _demo() -> None:\n    a = Value(2.0)\n    b = Value(-3.0)\n    c = Value(10.0)\n    d = a * b + c\n    e = d.tanh()\n    e.backward()\n\n    print(\"e = tanh(a*b + c)\", e.data)\n    print(\"grad a,b,c:\", a.grad, b.grad, c.grad)\n\n    svg_path = Path(__file__).resolve().parent / \"micrograd_graph.svg\"\n    try:\n        render_svg(e, svg_path)\n        print(\"Wrote\", svg_path)  # noqa: T201\n    except (ImportError, OSError, subprocess.CalledProcessError) as err:\n        print(\"Could not write SVG:\", err)"}}, {"data": {"id": "sym:examples/micrograd_value.py:_dot_quote", "label": "_dot_quote", "path": "examples/micrograd_value.py", "status": "added", "kind": "function", "calls": "replace", "old_code": "", "new_code": "def _dot_quote(s: str) -> str:\n    \"\"\"Escape for double-quoted DOT strings.\"\"\"\n    return s.replace(\"\\\\\", \"\\\\\\\\\").replace('\"', '\\\\\"')"}}, {"data": {"id": "sym:examples/micrograd_value.py:_value_html_label", "label": "_value_html_label", "path": "examples/micrograd_value.py", "status": "added", "kind": "function", "calls": "", "old_code": "", "new_code": "def _value_html_label(n: Value) -> str:\n    \"\"\"HTML-like label so **data** and **grad** always show in SVG (plain ``record`` is easy to miss).\"\"\"\n    return (\n        \"<<TABLE BORDER=\\\"1\\\" CELLBORDER=\\\"1\\\" CELLSPACING=\\\"0\\\" CELLPADDING=\\\"3\\\" \"\n        'STYLE=\"ROUNDED\">'\n        f\"<TR><TD BGCOLOR=\\\"#eeeeee\\\">data</TD><TD>{n.data:.4f}</TD></TR>\"\n        f\"<TR><TD BGCOLOR=\\\"#e8f4e8\\\">grad</TD><TD>{n.grad:.4f}</TD></TR>\"\n        \"</TABLE>>\"\n    )"}}, {"data": {"id": "sym:examples/micrograd_value.py:dot_source", "label": "dot_source", "path": "examples/micrograd_value.py", "status": "added", "kind": "function", "calls": "_dot_quote, _value_html_label, append, id, join, str, trace", "old_code": "", "new_code": "def dot_source(root: Value, *, rankdir: str = \"LR\") -> str:\n    \"\"\"Same topology as :func:`draw_dot`, as a Graphviz DOT string (no PyPI ``graphviz`` needed).\"\"\"\n    lines = [f\"digraph G {{\", f'  graph [rankdir=\"{_dot_quote(rankdir)}\"];']\n    nodes, edges = trace(root)\n\n    for n in nodes:\n        uid = str(id(n))\n        lines.append(f'  \"{uid}\" [label={_value_html_label(n)}, shape=plain];')\n        if n._op:\n            op_id = uid + n._op\n            lines.append(f'  \"{op_id}\" [label=\"{_dot_quote(n._op)}\"];')\n            lines.append(f'  \"{op_id}\" -> \"{uid}\";')\n\n    for n1, n2 in edges:\n        lines.append(f'  \"{id(n1)}\" -> \"{id(n2)}{n2._op}\";')\n\n    lines.append(\"}\")\n    return \"\\n\".join(lines)"}}, {"data": {"id": "sym:examples/micrograd_value.py:draw_dot", "label": "draw_dot", "path": "examples/micrograd_value.py", "status": "added", "kind": "function", "calls": "Digraph, ImportError, _value_html_label, edge, id, node, str, trace", "old_code": "", "new_code": "def draw_dot(root: Value, *, rankdir: str = \"LR\") -> \"Digraph\":\n    \"\"\"Render computation graph. Fixed: op nodes are unique; edges child -> op -> parent.\"\"\"\n    if Digraph is None:  # pragma: no cover\n        raise ImportError(\"graphviz package not installed (pip install graphviz)\")\n\n    dot = Digraph(format=\"svg\", graph_attr={\"rankdir\": rankdir})\n    nodes, edges = trace(root)\n\n    for n in nodes:\n        uid = str(id(n))\n        dot.node(\n            name=uid,\n            label=_value_html_label(n),\n            shape=\"plain\",\n        )\n        if n._op:\n            op_id = uid + n._op\n            dot.node(name=op_id, label=n._op)\n            dot.edge(op_id, uid)\n\n    for n1, n2 in edges:\n        # n1 -> op that produced n2\n        dot.edge(str(id(n1)), str(id(n2)) + n2._op)\n\n    return dot"}}, {"data": {"id": "sym:examples/micrograd_value.py:render_svg", "label": "render_svg", "path": "examples/micrograd_value.py", "status": "added", "kind": "function", "calls": "ImportError, Path, dot_source, draw_dot, expanduser, mkdir, pipe, resolve, run, str, which, write_bytes", "old_code": "", "new_code": "def render_svg(root: Value, path: Union[str, Path], *, rankdir: str = \"LR\") -> Path:\n    \"\"\"Write the computation graph as an SVG file.\n\n    Uses the PyPI ``graphviz`` package if installed (``dot.pipe``). Otherwise calls the\n    system ``dot`` executable (e.g. from Homebrew) with DOT from :func:`dot_source`.\n    \"\"\"\n    out = Path(path).expanduser().resolve()\n    out.parent.mkdir(parents=True, exist_ok=True)\n\n    if Digraph is not None:\n        dot = draw_dot(root, rankdir=rankdir)\n        out.write_bytes(dot.pipe(format=\"svg\"))\n        return out\n\n    dot_bin = shutil.which(\"dot\")\n    if dot_bin is None:\n        raise ImportError(\n            \"Cannot render SVG: install PyPI package `graphviz` (pip install graphviz) \"\n            \"or install Graphviz so `dot` is on PATH (e.g. brew install graphviz).\"\n        )\n\n    src = dot_source(root, rankdir=rankdir)\n    subprocess.run(\n        [dot_bin, \"-Tsvg\", \"-o\", str(out)],\n        input=src,\n        text=True,\n        check=True,\n    )\n    return out"}}, {"data": {"id": "sym:examples/micrograd_value.py:trace", "label": "trace", "path": "examples/micrograd_value.py", "status": "added", "kind": "function", "calls": "add, build, set", "old_code": "", "new_code": "def trace(root: Value) -> Tuple[Set[Value], Set[Tuple[Value, Value]]]:\n    nodes: Set[Value] = set()\n    edges: Set[Tuple[Value, Value]] = set()\n\n    def build(v: Value) -> None:\n        if v not in nodes:\n            nodes.add(v)\n            for ch in v._prev:\n                edges.add((ch, v))\n                build(ch)\n\n    build(root)\n    return nodes, edges"}}, {"data": {"id": "sym:examples/micrograd_value.py:zero_grad", "label": "zero_grad", "path": "examples/micrograd_value.py", "status": "added", "kind": "function", "calls": "trace", "old_code": "", "new_code": "def zero_grad(root: Value) -> None:\n    \"\"\"Set ``grad`` to 0 for every :class:`Value` reachable from ``root`` (before another ``backward``).\"\"\"\n    nodes, _ = trace(root)\n    for n in nodes:\n        n.grad = 0.0"}}], "edges": [{"data": {"id": "e0", "source": "sym:examples/micrograd_value.py:Value.__add__", "target": "sym:examples/micrograd_value.py:Value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e1", "source": "sym:examples/micrograd_value.py:Value.__add__", "target": "sym:examples/micrograd_value.py:_as_value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e2", "source": "sym:examples/micrograd_value.py:Value.__mul__", "target": "sym:examples/micrograd_value.py:Value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e3", "source": "sym:examples/micrograd_value.py:Value.__mul__", "target": "sym:examples/micrograd_value.py:_as_value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e4", "source": "sym:examples/micrograd_value.py:Value.__pow__", "target": "sym:examples/micrograd_value.py:Value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e5", "source": "sym:examples/micrograd_value.py:Value.__radd__", "target": "sym:examples/micrograd_value.py:_as_value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e6", "source": "sym:examples/micrograd_value.py:Value.__rmul__", "target": "sym:examples/micrograd_value.py:_as_value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e7", "source": "sym:examples/micrograd_value.py:Value.__rsub__", "target": "sym:examples/micrograd_value.py:_as_value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e8", "source": "sym:examples/micrograd_value.py:Value.__rtruediv__", "target": "sym:examples/micrograd_value.py:_as_value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e9", "source": "sym:examples/micrograd_value.py:Value.__sub__", "target": "sym:examples/micrograd_value.py:_as_value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e10", "source": "sym:examples/micrograd_value.py:Value.__truediv__", "target": "sym:examples/micrograd_value.py:_as_value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e11", "source": "sym:examples/micrograd_value.py:Value.tanh", "target": "sym:examples/micrograd_value.py:Value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e12", "source": "sym:examples/micrograd_value.py:_as_value", "target": "sym:examples/micrograd_value.py:Value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e13", "source": "sym:examples/micrograd_value.py:_demo", "target": "sym:examples/micrograd_value.py:Value", "etype": "calls", "label": "calls"}}, {"data": {"id": "e14", "source": "sym:examples/micrograd_value.py:_demo", "target": "sym:examples/micrograd_value.py:Value.backward", "etype": "calls", "label": "calls"}}, {"data": {"id": "e15", "source": "sym:examples/micrograd_value.py:_demo", "target": "sym:examples/micrograd_value.py:render_svg", "etype": "calls", "label": "calls"}}, {"data": {"id": "e16", "source": "sym:examples/micrograd_value.py:_demo", "target": "sym:examples/micrograd_value.py:Value.tanh", "etype": "calls", "label": "calls"}}, {"data": {"id": "e17", "source": "sym:examples/micrograd_value.py:dot_source", "target": "sym:examples/micrograd_value.py:_dot_quote", "etype": "calls", "label": "calls"}}, {"data": {"id": "e18", "source": "sym:examples/micrograd_value.py:dot_source", "target": "sym:examples/micrograd_value.py:_value_html_label", "etype": "calls", "label": "calls"}}, {"data": {"id": "e19", "source": "sym:examples/micrograd_value.py:dot_source", "target": "sym:examples/micrograd_value.py:trace", "etype": "calls", "label": "calls"}}, {"data": {"id": "e20", "source": "sym:examples/micrograd_value.py:draw_dot", "target": "sym:examples/micrograd_value.py:_value_html_label", "etype": "calls", "label": "calls"}}, {"data": {"id": "e21", "source": "sym:examples/micrograd_value.py:draw_dot", "target": "sym:examples/micrograd_value.py:trace", "etype": "calls", "label": "calls"}}, {"data": {"id": "e22", "source": "sym:examples/micrograd_value.py:render_svg", "target": "sym:examples/micrograd_value.py:dot_source", "etype": "calls", "label": "calls"}}, {"data": {"id": "e23", "source": "sym:examples/micrograd_value.py:render_svg", "target": "sym:examples/micrograd_value.py:draw_dot", "etype": "calls", "label": "calls"}}, {"data": {"id": "e24", "source": "sym:examples/micrograd_value.py:zero_grad", "target": "sym:examples/micrograd_value.py:trace", "etype": "calls", "label": "calls"}}], "title": "Solution Semantic Trace"};
+    let activeFilter = 'all';
+    let activeSearch = '';
+    const symbolsWrap = document.getElementById('symbols');
+    const details = document.getElementById('details');
+
+    function esc(s) {
+      return (s || '')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#39;');
+    }
+
+    function statusBadge(st) {
+      const color = st === 'added' ? '#2E7D32' : (st === 'modified' ? '#EF6C00' : '#C62828');
+      return `<span class="tag" style="color:${color}; border-color:${color}">${esc(st)}</span>`;
+    }
+
+    function matchNode(n) {
+      const d = n.data || n;
+      if (activeFilter !== 'all' && d.status !== activeFilter) return false;
+      if (!activeSearch) return true;
+      const t = (`${d.label} ${d.path} ${d.kind} ${d.calls || ''}`).toLowerCase();
+      return t.includes(activeSearch);
+    }
+
+    function renderCodePair(oldCode, newCode) {
+      const oldLines = (oldCode || '').split('\n');
+      const newLines = (newCode || '').split('\n');
+      const n = Math.max(oldLines.length, newLines.length);
+      let oldHtml = '';
+      let newHtml = '';
+      for (let i = 0; i < n; i++) {
+        const ol = oldLines[i] ?? '';
+        const nl = newLines[i] ?? '';
+        const changed = ol !== nl;
+        oldHtml += changed ? `<span class="chg">${esc(ol || ' ')}</span>` : `${esc(ol || ' ')}`;
+        newHtml += changed ? `<span class="chg">${esc(nl || ' ')}</span>` : `${esc(nl || ' ')}`;
+        if (i !== n - 1) {
+          oldHtml += '\n';
+          newHtml += '\n';
+        }
+      }
+      return { oldHtml, newHtml };
+    }
+
+    function renderSymbolList() {
+      const rows = data.nodes.map(x => x.data).filter(matchNode);
+      if (!rows.length) {
+        symbolsWrap.innerHTML = '<div class="symbol">No symbols match current filter.</div>';
+        return;
+      }
+      symbolsWrap.innerHTML = rows.map(d => {
+        const pair = renderCodePair(d.old_code || '', d.new_code || '');
+        return `
+        <div class="symbol" data-id="${esc(d.id)}">
+          <div class="hdr">${statusBadge(d.status)} ${esc(d.label)}</div>
+          <div class="meta">${esc(d.path)} · ${esc(d.kind)} · calls: ${esc(d.calls || '-')}</div>
+          <div class="grid">
+            <div>
+              <div class="meta">old_code</div>
+              <pre>${pair.oldHtml}</pre>
+            </div>
+            <div>
+              <div class="meta">new_code</div>
+              <pre>${pair.newHtml}</pre>
+            </div>
+          </div>
+        </div>
+      `; }).join('');
+    }
+
+    const cy = cytoscape({
+      container: document.getElementById('cy'),
+      elements: [...data.nodes, ...data.edges],
+      style: [
+        { selector: 'node', style: {
+          'label': 'data(label)', 'font-size': 10, 'text-valign':'center', 'text-halign':'center',
+          'shape':'round-rectangle', 'padding':'8px', 'border-width':1.5, 'background-color':'#E8F4FC', 'border-color':'#1565C0'
+        }},
+        { selector: 'node[status = "added"]', style: { 'background-color':'#E8F5E9', 'border-color':'#2E7D32' } },
+        { selector: 'node[status = "modified"]', style: { 'background-color':'#FFF8E1', 'border-color':'#EF6C00' } },
+        { selector: 'node[status = "removed"]', style: { 'background-color':'#FFEBEE', 'border-color':'#C62828' } },
+        { selector: 'edge', style: {
+          'curve-style':'bezier', 'width':1.5, 'target-arrow-shape':'triangle', 'arrow-scale':0.8,
+          'line-color':'#8D6E63', 'target-arrow-color':'#8D6E63', 'label':'data(label)', 'font-size':8
+        }},
+        { selector: '.dim', style: { 'opacity':0.12 } },
+        { selector: '.hi', style: { 'opacity':1.0 } }
+      ],
+      layout: { name:'breadthfirst', directed:true, spacingFactor:1.05 }
+    });
+
+    function rotateGraph90() {
+      const nodes = cy.nodes();
+      if (!nodes.length) return;
+      let sx = 0, sy = 0;
+      nodes.forEach(n => {
+        const p = n.position();
+        sx += p.x;
+        sy += p.y;
+      });
+      const cx = sx / nodes.length;
+      const cy0 = sy / nodes.length;
+      nodes.forEach(n => {
+        const p = n.position();
+        const dx = p.x - cx;
+        const dy = p.y - cy0;
+        // 90-degree rotation around centroid: (x, y) -> (-y, x)
+        n.position({ x: cx - dy, y: cy0 + dx });
+      });
+      cy.fit(undefined, 20);
+    }
+    rotateGraph90();
+
+    (function initSplitter() {
+      const layoutEl = document.getElementById('layout');
+      const cyPanel = document.getElementById('cy-panel');
+      const split = document.getElementById('splitter');
+      let dragging = false;
+      split.addEventListener('mousedown', (e) => {
+        dragging = true;
+        e.preventDefault();
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        const rect = layoutEl.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        let pct = (x / rect.width) * 100;
+        pct = Math.max(15, Math.min(85, pct));
+        cyPanel.style.flex = '0 0 ' + pct + '%';
+        cy.resize();
+      });
+      document.addEventListener('mouseup', () => {
+        if (!dragging) return;
+        dragging = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        cy.resize();
+      });
+    })();
+
+    function applyGraphFilters() {
+      cy.elements().removeClass('dim').removeClass('hi');
+      cy.nodes().forEach(n => {
+        const d = n.data();
+        const ok = (activeFilter === 'all' || d.status === activeFilter) &&
+                   (!activeSearch || (`${d.label} ${d.path} ${d.kind} ${d.calls || ''}`).toLowerCase().includes(activeSearch));
+        if (!ok) n.addClass('dim');
+      });
+      cy.edges().forEach(ed => {
+        if (ed.source().hasClass('dim') && ed.target().hasClass('dim')) ed.addClass('dim');
+      });
+    }
+
+    cy.on('tap', 'node', (evt) => {
+      const d = evt.target.data();
+      details.textContent = JSON.stringify(d, null, 2);
+      cy.elements().addClass('dim').removeClass('hi');
+      evt.target.removeClass('dim').addClass('hi');
+      evt.target.connectedEdges().removeClass('dim').addClass('hi');
+      evt.target.neighborhood().removeClass('dim').addClass('hi');
+      const el = document.querySelector(`[data-id="${CSS.escape(d.id)}"]`);
+      if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+    });
+    cy.on('tap', (evt) => {
+      if (evt.target === cy) {
+        applyGraphFilters();
+      }
+    });
+
+    document.getElementById('search').addEventListener('input', (e) => {
+      activeSearch = e.target.value.toLowerCase().trim();
+      applyGraphFilters();
+      renderSymbolList();
+    });
+    document.querySelectorAll('[data-filter]').forEach(btn => btn.addEventListener('click', () => {
+      activeFilter = btn.getAttribute('data-filter');
+      applyGraphFilters();
+      renderSymbolList();
+    }));
+
+    renderSymbolList();
+  </script>
+</body>
+</html>
