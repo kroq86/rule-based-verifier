@@ -5,6 +5,14 @@ Human-led workflow for AI-assisted coding: **policy first**, **small steps**, **
 - **`AGENTS.md`** — full operating rules (pair-programming model, plan/rollback, circuit breaker, MCP phases).
 - **`CONTRIBUTING.md`** — PR norms, Docker image on GHCR, Cursor `mcp.json` and duplicate-server pitfalls.
 
+## System design
+
+**Problem.** If an AI writes code and another AI (or the same stack) “reviews” it **without** an external reference, both sides reason from the **same artefact** (the code) and often share the **same training distribution**. Classical ensemble reasoning assumes failures are **independent**; here they tend to be **correlated**, so stacking probabilistic reviewers does not create a ground-truth gate—it checks code against itself, not against **intent**.
+
+**Principle.** Treat **executable specifications** as the quality gate: tests, linters, contracts—anything that yields a **deterministic** pass/fail against stated behaviour. The pipeline is the verifier: **code vs intent**, not code vs model opinion. Optional AI review belongs on the **residual** that specs cannot cover (architecture, coupling, design drift), not as a substitute for that gate.
+
+**How this repo fits.** The MCP server is the **bounded verification layer**: read/search within the workspace root, run **tests** and **linters**, optional **semantic trace**—all **tool-shaped**, not “another LLM judges correctness.” `AGENTS.md` keeps **humans** on architecture and stop decisions; tools make outcomes inspectable.
+
 ## What’s here
 
 | Area | Purpose |
